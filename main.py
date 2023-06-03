@@ -30,49 +30,69 @@ for item in root.iter("item"):
 
     data = [code, areaNo, date, today, tomorrow, dayaftertomorrow, todaysaftertomorrow]
 
+
+
 class MainGUI():
+    # 북마크 리스트 박스내의 아이템 더블클릭시 실행되는 함수
+    def double_clickBookmark(self, event):
+        # 선택된 지역에 대한 검색을 실행한다
+        selected_item = self.bookmarkListbox.get(self.bookmarkListbox.curselection())
+        print(f"You double-clicked: {selected_item}")
+
+    # 검색 리스트 박스내의 아이템 더블클릭시 실행되는 함수
+    def double_clickSearch(self, event):
+        # 선택된 지역에 대한 검색을 실행한다
+        selected_item = self.searchListbox.get(self.searchListbox.curselection())
+        print(f"You double-clicked: {selected_item}")
+
+    # 리스트 박스와 스크롤 바 길이 맞춤
+    def configure_scrollbar(self, event):
+        self.searchScrollbar.place_configure(height=event.height)
+        self.bookmarkScrollbar.place_configure(height=event.height)
+
+    # 검색 버튼이 눌렸을 때 작동하는 함수
+    def commandSearch(self):
+        # 지역검색이 이루어져야 하며 self.searchListbox.insert 함수로 리스트 박스를 채워야 한다
+        pass
+
+    # UI 설정
     def setUI(self):
-        frame = Frame(self.window)
-        frame.pack()
+
         # 검색 버튼과 검색창
-        self.searchEntry = Entry(frame, font = ('arial',30))
-        self.searchButton = Button(frame, text='검색', font = ('arial',20))
-        self.searchEntry.pack(side=LEFT)
-        self.searchButton.pack(side=LEFT)
+        self.searchEntry = Entry(self.window, font=('arial', 30))
+        self.searchButton = Button(self.window, text='검색', font=('arial', 20), command=self.commandSearch)
+        self.searchEntry.place(x=0)
+        self.searchButton.place(x=500)
 
         # 검색 결과창
-        frame = Frame(self.window)
-        frame.pack()
+        self.searchScrollbar = Scrollbar(self.window)
+        self.searchScrollbar.place(x=200, y=50)
 
-        self.searchListbox = Listbox(frame)
-        self.searchListbox.pack(side=LEFT, fill=Y)
-
-        self.searchScrollbar = Scrollbar(frame, orient=VERTICAL)
+        self.searchListbox = Listbox(self.window, font=('arial', 15), width=12, height=7, yscrollcommand=self.searchScrollbar.set)
+        self.searchListbox.place(x=50, y=50)
+        self.searchListbox.bind('<Configure>', self.configure_scrollbar)
+        self.searchListbox.bind("<Double-Button-1>", self.double_clickSearch)
         self.searchScrollbar.config(command=self.searchListbox.yview)
-        self.searchScrollbar.pack(side=LEFT, fill=Y)
 
-        self.searchListbox.config(yscrollcommand=self.searchScrollbar.set)
+        # 리스트 박스 테스트 값
         for i in range(1, 21):
             self.searchListbox.insert(END, f"검색 {i}")
 
         # 북마크 목록
+        self.bookmarkScrollbar = Scrollbar(self.window)
+        self.bookmarkScrollbar.place(x=450, y=50)
 
-        self.bookmarkListbox = Listbox(frame)
-        self.bookmarkListbox.pack(side=LEFT, fill=Y)
+        self.bookmarkListbox = Listbox(self.window, font=('arial', 15), width=12, height=7, yscrollcommand=self.bookmarkScrollbar.set)
+        self.bookmarkListbox.place(x=300, y=50)
+        self.bookmarkListbox.bind('<Configure>', self.configure_scrollbar)
+        self.bookmarkListbox.bind("<Double-Button-1>", self.double_clickBookmark)
 
-        self.bookmarkScrollbar = Scrollbar(frame, orient=VERTICAL)
-        self.bookmarkScrollbar.pack(side=LEFT, fill=Y)
         self.bookmarkScrollbar.config(command=self.bookmarkListbox.yview)
-
-        self.bookmarkListbox.config(yscrollcommand=self.bookmarkScrollbar.set)
 
         for i in range(1, 21):
             self.bookmarkListbox.insert(END, f"Item {i}")
-        self.bookmarkButton = Button(frame, text='즐겨찾기 추가')
-        self.bookmarkButton.pack(side=RIGHT)
-
-
-
+        self.bookmarkButton = Button(self.window, text='즐겨찾기 추가')
+        self.bookmarkButton.place(x=500, y=100)
 
 
     def __init__(self):
