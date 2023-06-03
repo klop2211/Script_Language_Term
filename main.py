@@ -2,6 +2,7 @@ from tkinter import *
 import requests
 import xml.etree.ElementTree as ET
 import time
+import urllib.request
 from urllib.request import Request, urlopen
 from urllib import parse
 from urllib.parse import urlencode, quote_plus
@@ -30,7 +31,8 @@ for item in root.iter("item"):
 
     data = [code, areaNo, date, today, tomorrow, dayaftertomorrow, todaysaftertomorrow]
 
-
+# 구글 맵 API 키
+MAP_API_KEY = "AIzaSyDldj_-4P3T4gKWdy6zqThReKArNFUXWAM"
 
 class MainGUI():
     # 북마크 리스트 박스내의 아이템 더블클릭시 실행되는 함수
@@ -39,11 +41,17 @@ class MainGUI():
         selected_item = self.bookmarkListbox.get(self.bookmarkListbox.curselection())
         print(f"You double-clicked: {selected_item}")
 
+        # 이 함수의 인자로 위도, 경도 넣어주면 됌
+        self.drawMap()
+
     # 검색 리스트 박스내의 아이템 더블클릭시 실행되는 함수
     def double_clickSearch(self, event):
         # 선택된 지역에 대한 검색을 실행한다
         selected_item = self.searchListbox.get(self.searchListbox.curselection())
         print(f"You double-clicked: {selected_item}")
+
+        # 이 함수의 인자로 위도, 경도 넣어주면 됌
+        self.drawMap()
 
     # 리스트 박스와 스크롤 바 길이 맞춤
     def configure_scrollbar(self, event):
@@ -54,6 +62,16 @@ class MainGUI():
     def commandSearch(self):
         # 지역검색이 이루어져야 하며 self.searchListbox.insert 함수로 리스트 박스를 채워야 한다
         pass
+
+    # 위도, 경도를 받아 지도를 그려주는 함수
+    def drawMap(self, latitude=37.541, longitude=126.986):
+        size = "280x280"
+        zoom = 15
+        url = f"https://maps.googleapis.com/maps/api/staticmap?center={latitude},{longitude}&zoom={zoom}&size={size}&key={MAP_API_KEY}"
+        urllib.request.urlretrieve(url, "map.png")
+        map_image = PhotoImage(file="map.png")
+        self.mapLabel.configure(image=map_image)
+        self.mapLabel.image = map_image
 
     # UI 설정
     def setUI(self):
@@ -93,6 +111,9 @@ class MainGUI():
             self.bookmarkListbox.insert(END, f"Item {i}")
         self.bookmarkButton = Button(self.window, text='즐겨찾기 추가')
         self.bookmarkButton.place(x=500, y=100)
+
+        self.mapLabel = Label(self.window)
+        self.mapLabel.place(x=20, y=250)
 
 
     def __init__(self):
