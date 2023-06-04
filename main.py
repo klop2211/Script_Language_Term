@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 import time
 import urllib.request
 from openpyxl import load_workbook
+import pickle
 
 # 소나무, 참나무만 4~6 데이터를 제공
 # 소나무
@@ -116,6 +117,20 @@ class MainGUI():
         self.mapLabel.configure(image=map_image)
         self.mapLabel.image = map_image
 
+    # 현재 searchListbox 에서 선택된 값을 즐겨찾기에 추가한다
+    def commandBookmarkInsert(self):
+        selected_item = self.searchListbox.get(self.searchListbox.curselection())
+        if type(selected_item) == str:
+            self.bookmarkListbox.insert(END, selected_item)
+            with open('bookmark.pickle', 'wb') as f:
+                pickle.dump(self.bookmarkListbox.get(0, END), f)
+
+    # 즐겨찾기 삭제
+    def commandBookmarkDelete(self):
+        self.bookmarkListbox.delete(self.bookmarkListbox.curselection())
+        with open('bookmark.pickle', 'wb') as f:
+            pickle.dump(self.bookmarkListbox.get(0, END), f)
+
     # UI 설정
     def setUI(self):
 
@@ -127,29 +142,33 @@ class MainGUI():
 
         # 검색 결과창
         self.searchScrollbar = Scrollbar(self.window)
-        self.searchScrollbar.place(x=200, y=50)
+        self.searchScrollbar.place(x=220, y=70)
 
-        self.searchListbox = Listbox(self.window, font=('arial', 15), width=12, height=7, yscrollcommand=self.searchScrollbar.set)
-        self.searchListbox.place(x=50, y=50)
+        self.searchListbox = Listbox(self.window, font=('arial', 10), width=25, height=7, yscrollcommand=self.searchScrollbar.set)
+        self.searchListbox.place(x=20, y=70)
         self.searchListbox.bind('<Configure>', self.configure_scrollbar)
         self.searchListbox.bind("<Double-Button-1>", self.double_clickSearch)
         self.searchScrollbar.config(command=self.searchListbox.yview)
 
         # 북마크 목록
         self.bookmarkScrollbar = Scrollbar(self.window)
-        self.bookmarkScrollbar.place(x=450, y=50)
+        self.bookmarkScrollbar.place(x=470, y=70)
 
-        self.bookmarkListbox = Listbox(self.window, font=('arial', 15), width=12, height=7, yscrollcommand=self.bookmarkScrollbar.set)
-        self.bookmarkListbox.place(x=300, y=50)
+        self.bookmarkListbox = Listbox(self.window, font=('arial', 10), width=25, height=7, yscrollcommand=self.bookmarkScrollbar.set)
+        self.bookmarkListbox.place(x=270, y=70)
         self.bookmarkListbox.bind('<Configure>', self.configure_scrollbar)
         self.bookmarkListbox.bind("<Double-Button-1>", self.double_clickBookmark)
 
+        # 저장된 즐겨찾기 불러옴
+        with open('bookmark.pickle', 'rb') as f:
+            readBookmark = pickle.load(f)
+        self.bookmarkListbox.insert(END, *readBookmark)
         self.bookmarkScrollbar.config(command=self.bookmarkListbox.yview)
 
-        for i in range(1, 21):
-            self.bookmarkListbox.insert(END, f"Item {i}")
-        self.bookmarkButton = Button(self.window, text='즐겨찾기 추가')
-        self.bookmarkButton.place(x=500, y=100)
+        self.bookmarkButton = Button(self.window, text='즐겨찾기 추가', command=self.commandBookmarkInsert)
+        self.bookmarkButton.place(x=500, y=80)
+        self.bookmarkButton = Button(self.window, text='즐겨찾기 삭제', command=self.commandBookmarkDelete)
+        self.bookmarkButton.place(x=500, y=130)
 
         self.mapLabel = Label(self.window)
         self.mapLabel.place(x=20, y=250)
