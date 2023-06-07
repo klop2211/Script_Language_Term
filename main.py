@@ -5,6 +5,7 @@ import time
 import urllib.request
 from openpyxl import load_workbook
 import pickle
+import os
 
 # 소나무, 참나무만 4~6 데이터를 제공
 # 소나무
@@ -160,9 +161,10 @@ class MainGUI():
         self.bookmarkListbox.bind("<Double-Button-1>", self.double_clickBookmark)
 
         # 저장된 즐겨찾기 불러옴
-        with open('bookmark.pickle', 'rb') as f:
-            readBookmark = pickle.load(f)
-        self.bookmarkListbox.insert(END, *readBookmark)
+        if os.path.exists('bookmark.pickle'):
+            with open('bookmark.pickle', 'rb') as f:
+                readBookmark = pickle.load(f)
+            self.bookmarkListbox.insert(END, *readBookmark)
         self.bookmarkScrollbar.config(command=self.bookmarkListbox.yview)
 
         self.bookmarkButton = Button(self.window, text='즐겨찾기 추가', command=self.commandBookmarkInsert)
