@@ -6,6 +6,8 @@ import urllib.request
 from openpyxl import load_workbook
 import pickle
 import os
+from PIL import Image, ImageTk
+import spam
 
 # 소나무, 참나무만 4~6 데이터를 제공
 # 소나무
@@ -74,6 +76,7 @@ class MainGUI():
             # 이 함수의 인자로 위도, 경도 넣어주면 됌
             self.drawMap(wedo, kyoungdo)
 
+
     # 검색 리스트 박스내의 아이템 더블클릭시 실행되는 함수
     def double_clickSearch(self, event):
         # 선택된 지역에 대한 검색을 실행한다
@@ -94,6 +97,7 @@ class MainGUI():
             # 이 함수의 인자로 위도, 경도 넣어주면 됌
             self.drawMap(wedo, kyoungdo)
 
+
     # 리스트 박스와 스크롤 바 길이 맞춤
     def configure_scrollbar(self, event):
         self.searchScrollbar.place_configure(height=event.height)
@@ -110,13 +114,33 @@ class MainGUI():
 
     # 위도, 경도를 받아 지도를 그려주는 함수
     def drawMap(self, latitude=37.541, longitude=126.986):
-        size = "280x280"
+        size = "250x250"
         zoom = 15
         url = f"https://maps.googleapis.com/maps/api/staticmap?center={latitude},{longitude}&zoom={zoom}&size={size}&key={MAP_API_KEY}"
         urllib.request.urlretrieve(url, "map.png")
         map_image = PhotoImage(file="map.png")
         self.mapLabel.configure(image=map_image)
         self.mapLabel.image = map_image
+
+    # 종류, 리스트(오늘, 내일, 모레 3일치 값을 담은)
+    def drawGraph(self, name, dataList):
+        # 그래프 캔버스
+        self.canvas = Canvas(self.window, width=250, height=250)
+        self.canvas.place(x=300, y=550)
+        width = 250 - 10
+        height = 200 * 0.75
+        maxCount = max(dataList)
+        textlist = ['오늘', '내일', '모레']
+        for i in range(3):
+            self.canvas.create_rectangle(i * width / 3 + 5, 200 - (height * dataList[i]/maxCount) - 5, (i + 1) * width / 3 + 5, 200 - 5)
+            self.canvas.create_text(i * width / 3 + 5 + 0.5*width/3, 200 + 5, text=textlist[i])
+        self.canvas.create_text(width / 2, 20, text=name)
+        self.drawPhoto(name)
+
+    def drawPhoto(self, name):
+        image = PhotoImage(file=f'image/{name}.png')
+        self.photoLabel.configure(image=image)
+        self.photoLabel.image = image
 
     # 현재 searchListbox 에서 선택된 값을 즐겨찾기에 추가한다
     def commandBookmarkInsert(self):
@@ -131,6 +155,27 @@ class MainGUI():
         self.bookmarkListbox.delete(self.bookmarkListbox.curselection())
         with open('bookmark.pickle', 'wb') as f:
             pickle.dump(self.bookmarkListbox.get(0, END), f)
+
+    # 소나무에 대한 정보 표시
+    def commandSonamu(self):
+        # 여기에 값을 넣어주세요
+        dataList = []
+
+        self.drawGraph('소나무', dataList)
+
+    # 참나무에 대한 정보 표시
+    def commandChamnamu(self):
+        # 여기에 값을 넣어주세요
+        dataList = []
+
+        self.drawGraph('참나무', dataList)
+
+    # 잡초류에 대한 정보 표시
+    def commandJapchoryu(self):
+        # 여기에 값을 넣어주세요
+        dataList = []
+
+        self.drawGraph('잡초류', dataList)
 
     # UI 설정
     def setUI(self):
@@ -172,8 +217,21 @@ class MainGUI():
         self.bookmarkButton = Button(self.window, text='즐겨찾기 삭제', command=self.commandBookmarkDelete)
         self.bookmarkButton.place(x=500, y=130)
 
+        # 지도 그리기용 라벨
         self.mapLabel = Label(self.window)
         self.mapLabel.place(x=20, y=250)
+
+        # 정보 검색용 버튼
+        self.sonamuButton = Button(self.window, text='소나무', command=self.commandSonamu)
+        self.sonamuButton.place(x=300, y=250)
+        self.chamnamuButton = Button(self.window, text='참나무', command=self.commandChamnamu)
+        self.chamnamuButton.place(x=400, y=250)
+        self.japchoryuButton = Button(self.window, text='잡초류', command=self.commandJapchoryu)
+        self.japchoryuButton.place(x=500, y=250)
+
+        # 꽃가루 종류 사진 라벨
+        self.photoLabel = Label(self.window, width=250, height=250)
+        self.photoLabel.place(x=300, y=300)
 
 
     def __init__(self):
@@ -181,8 +239,6 @@ class MainGUI():
         self.window.title("플라워타임")
         self.window.geometry("600x800")
         self.setUI()
-
-
         self.window.mainloop()
 
 # aaaa
