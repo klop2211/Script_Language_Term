@@ -137,8 +137,11 @@ class MainGUI():
         self.canvas.create_text(width / 2, 20, text=name)
         self.drawPhoto(name)
 
+    # 꽃가루 종류
     def drawPhoto(self, name):
-        image = PhotoImage(file=f'image/{name}.png')
+        # '문자열' + '.png' 를 리턴하는 C++ 연동
+        filename = spam.plusPNG(name)
+        image = PhotoImage(file=f'image/{filename}')
         self.photoLabel.configure(image=image)
         self.photoLabel.image = image
 
