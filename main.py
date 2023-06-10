@@ -59,8 +59,8 @@ class MainGUI():
     # 북마크 리스트 박스내의 아이템 더블클릭시 실행되는 함수
     def double_clickBookmark(self, event):
         # 선택된 지역에 대한 검색을 실행한다
-        selected_item = self.bookmarkListbox.get(self.bookmarkListbox.curselection())
-        print(f"You double-clicked: {selected_item}")
+        self.selected_item = self.bookmarkListbox.get(self.bookmarkListbox.curselection())
+        print(f"You double-clicked: {self.selected_item}")
 
         wedo = -1
         kyoungdo = -1
@@ -68,7 +68,7 @@ class MainGUI():
         for row in sheet.iter_rows(values_only=True):
             if row[2] != None and row[3] != None and row[4] != None:
                 t = row[2] + ' ' + row[3] + ' ' + row[4]
-                if selected_item == t:
+                if self.selected_item == t:
                     wedo = row[14]
                     kyoungdo = row[13]
 
@@ -80,16 +80,15 @@ class MainGUI():
     # 검색 리스트 박스내의 아이템 더블클릭시 실행되는 함수
     def double_clickSearch(self, event):
         # 선택된 지역에 대한 검색을 실행한다
-        selected_item = self.searchListbox.get(self.searchListbox.curselection())
-        print(f"You double-clicked: {selected_item}")
-
+        self.selected_item = self.searchListbox.get(self.searchListbox.curselection())
+        print(f"You double-clicked: {self.selected_item}")
         wedo = -1
         kyoungdo = -1
         # 위도 경도 뽑아내야함
         for row in sheet.iter_rows(values_only=True):
             if row[2] != None and row[3] != None and row[4] != None:
                 t = row[2] + ' ' + row[3] + ' ' + row[4]
-                if selected_item == t:
+                if self.selected_item == t:
                     wedo = row[14]
                     kyoungdo = row[13]
 
@@ -163,6 +162,8 @@ class MainGUI():
     def commandSonamu(self):
         # 여기에 값을 넣어주세요
         dataList = []
+        # 현재 선택된 지역은 self.selected_item 입니다
+
 
         self.drawGraph('소나무', dataList)
 
@@ -170,14 +171,14 @@ class MainGUI():
     def commandChamnamu(self):
         # 여기에 값을 넣어주세요
         dataList = []
-
+        # 현재 선택된 지역은 self.selected_item 입니다
         self.drawGraph('참나무', dataList)
 
     # 잡초류에 대한 정보 표시
     def commandJapchoryu(self):
         # 여기에 값을 넣어주세요
         dataList = []
-
+        # 현재 선택된 지역은 self.selected_item 입니다
         self.drawGraph('잡초류', dataList)
 
     # UI 설정
