@@ -1,40 +1,16 @@
+from datetime import datetime
 from tkinter import *
 import requests
 import xml.etree.ElementTree as ET
-import time
 import urllib.request
 from openpyxl import load_workbook
 import pickle
 import os
 from PIL import Image, ImageTk
 import spam
+from dateutil.relativedelta import relativedelta
 
-# 소나무, 참나무만 4~6 데이터를 제공
-# 소나무
-url = 'http://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/getPinePollenRiskIdxV3'
-service_key = "oWT9dq/7S6E11bbGOg2qY18HrHxLHQov6dy6WglV6AzFYqnOUC0YnQt/3GblAB1ygHHoWQpDuY0Wqc8grUD5oQ=="
-now = time
-now = now.strftime('%Y%m%d06') #2023052605 같은 형태로 전달해 줘야함
-queryParams = {'serviceKey': service_key, 'numOfRows': '3796', 'pageNo': '1', 'areaNo': '', 'time': now}
-
-response = requests.get(url, params=queryParams)
-# print(response.text)
-root = ET.fromstring(response.text)
-
-temp = []
-Pine_data = []
-
-# 읽어올  값
-for item in root.iter("item"):
-    areaNo = item.findtext("areaNo") # 지점코드
-    date = item.findtext("date") # 발표시간
-    today = item.findtext("today") # 오늘 예측값
-    tomorrow = item.findtext("tomorrow") # 내일 예측값
-    dayaftertomorrow = item.findtext("dayaftertomorrow") # 모레 예측값
-
-    temp = [areaNo, date, today, tomorrow, dayaftertomorrow]
-    Pine_data.append(temp)
-
+# 지역 데이터
 workbook = load_workbook('지역별 지점코드(20230330).xlsx', data_only=True)
 sheet = workbook['최종 업데이트 파일_20230330']
 
@@ -51,6 +27,85 @@ for row in sheet.iter_rows(values_only=True):
         ck = False
 
 workbook.close()
+
+# 소나무, 참나무만 4~6 데이터를 제공
+# 소나무
+url = 'http://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/getPinePollenRiskIdxV3'
+service_key = "oWT9dq/7S6E11bbGOg2qY18HrHxLHQov6dy6WglV6AzFYqnOUC0YnQt/3GblAB1ygHHoWQpDuY0Wqc8grUD5oQ=="
+now = datetime.now()
+before_12_hour = now - relativedelta(hours=12)
+string_now = now.strftime('%Y%m%d%H')
+string_18 = now.strftime('%Y%m%d18')
+string_06 = now.strftime('%Y%m%d06')
+
+if string_18 > string_now and string_now > string_06:
+    now = string_now
+else:
+    now = before_12_hour.strftime('%Y%m%d%H')
+
+
+queryParams = {'serviceKey': service_key, 'numOfRows': '3796', 'pageNo': '1', 'areaNo': '', 'time': now}
+
+response = requests.get(url, params=queryParams)
+root = ET.fromstring(response.text)
+
+temp = []
+Pine_data = []
+
+# 읽어올  값
+for item in root.iter("item"):
+    areaNo = item.findtext("areaNo") # 지점코드
+    date = item.findtext("date") # 발표시간
+    today = item.findtext("today") # 오늘 예측값
+    tomorrow = item.findtext("tomorrow") # 내일 예측값
+    dayaftertomorrow = item.findtext("dayaftertomorrow") # 모레 예측값
+
+    temp = [areaNo, date, today, tomorrow, dayaftertomorrow]
+    Pine_data.append(temp)
+
+# 참나무
+url = 'http://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/getOakPollenRiskIdxV3'
+queryParams = {'serviceKey': service_key, 'numOfRows': '3796', 'pageNo': '1', 'areaNo': '', 'time': now}
+
+response = requests.get(url, params=queryParams)
+root = ET.fromstring(response.text)
+
+temp = []
+Oak_data = []
+
+# 읽어올  값
+for item in root.iter("item"):
+    areaNo = item.findtext("areaNo") # 지점코드
+    date = item.findtext("date") # 발표시간
+    today = item.findtext("today") # 오늘 예측값
+    tomorrow = item.findtext("tomorrow") # 내일 예측값
+    dayaftertomorrow = item.findtext("dayaftertomorrow") # 모레 예측값
+
+    temp = [areaNo, date, today, tomorrow, dayaftertomorrow]
+    Oak_data.append(temp)
+
+
+# 잡초류
+
+url = 'http://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/getWeedsPollenRiskIdxV3'
+queryParams = {'serviceKey': service_key, 'numOfRows': '3796', 'pageNo': '1', 'areaNo': '', 'time': now}
+
+response = requests.get(url, params=queryParams)
+root = ET.fromstring(response.text)
+
+temp = []
+Weed_data = []
+
+# 읽어올  값
+for item in root.iter("item"):
+    areaNo = item.findtext("areaNo") # 지점코드
+    date = item.findtext("date") # 발표시간
+    today = item.findtext("today") # 오늘 예측값
+    tomorrow = item.findtext("tomorrow") # 내일 예측값
+    dayaftertomorrow = item.findtext("dayaftertomorrow") # 모레 예측값
+
+    temp = [areaNo, date, today, tomorrow, dayaftertomorrow]
+    Weed_data.append(temp)
 
 # 구글 맵 API 키
 MAP_API_KEY = "AIzaSyDldj_-4P3T4gKWdy6zqThReKArNFUXWAM"
@@ -128,13 +183,28 @@ class MainGUI():
         self.canvas.place(x=300, y=550)
         width = 250 - 10
         height = 200 * 0.75
-        maxCount = max(dataList)
+        maxCount = 0
+        if dataList:
+            maxCount = max(dataList)
+            maxCount = int(maxCount)
+        if maxCount == 0:
+            maxCount = 1
+
+        if dataList:
+            for i  in range(3):
+                dataList[i] = int(dataList[i])
+
         textlist = ['오늘', '내일', '모레']
-        for i in range(3):
-            self.canvas.create_rectangle(i * width / 3 + 5, 200 - (height * dataList[i]/maxCount) - 5, (i + 1) * width / 3 + 5, 200 - 5)
-            self.canvas.create_text(i * width / 3 + 5 + 0.5*width/3, 200 + 5, text=textlist[i])
-        self.canvas.create_text(width / 2, 20, text=name)
-        self.drawPhoto(name)
+
+        if not dataList:
+            self.canvas.create_text(width / 2, 20, text = '자료 제공 기간이 아닙니다.')
+            self.drawPhoto(name)
+        else:
+            for i in range(3):
+                self.canvas.create_rectangle(i * width / 3 + 5, 200 - (height * dataList[i]/maxCount) - 5, (i + 1) * width / 3 + 5, 200 - 5)
+                self.canvas.create_text(i * width / 3 + 5 + 0.5*width/3, 200 + 5, text=textlist[i])
+            self.canvas.create_text(width / 2, 20, text=name)
+            self.drawPhoto(name)
 
     # 꽃가루 종류
     def drawPhoto(self, name):
@@ -160,17 +230,28 @@ class MainGUI():
 
     # 소나무에 대한 정보 표시
     def commandSonamu(self):
-        # 여기에 값을 넣어주세요
         dataList = []
+
+        # 여기에 값을 넣어주세요
+        for i in range(len(data)):
+            if data[i] == self.selected_item:
+                dataList.append(Pine_data[i][2]) # 오늘
+                dataList.append(Pine_data[i][3]) # 내일
+                dataList.append(Pine_data[i][4]) # 모레
         # 현재 선택된 지역은 self.selected_item 입니다
-
-
         self.drawGraph('소나무', dataList)
 
     # 참나무에 대한 정보 표시
     def commandChamnamu(self):
         # 여기에 값을 넣어주세요
         dataList = []
+
+        if Oak_data:
+            for i in range(len(data)):
+                if data[i] == self.selected_item:
+                    dataList.append(Oak_data[i][2]) # 오늘
+                    dataList.append(Oak_data[i][3]) # 내일
+                    dataList.append(Oak_data[i][4]) # 모레
         # 현재 선택된 지역은 self.selected_item 입니다
         self.drawGraph('참나무', dataList)
 
@@ -178,6 +259,14 @@ class MainGUI():
     def commandJapchoryu(self):
         # 여기에 값을 넣어주세요
         dataList = []
+
+        if Weed_data:
+            for i in range(len(data)):
+                if data[i] == self.selected_item:
+                    dataList.append(Weed_data[i][2]) # 오늘
+                    dataList.append(Weed_data[i][3]) # 내일
+                    dataList.append(Weed_data[i][4]) # 모레
+
         # 현재 선택된 지역은 self.selected_item 입니다
         self.drawGraph('잡초류', dataList)
 
