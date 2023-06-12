@@ -11,77 +11,139 @@ from bs4 import BeautifulSoup
 import re
 from datetime import date, datetime, timedelta
 import traceback
+from dateutil.relativedelta import relativedelta
+from openpyxl import load_workbook
+import requests
+import xml.etree.ElementTree as ET
 
-key = 'oWT9dq/7S6E11bbGOg2qY18HrHxLHQov6dy6WglV6AzFYqnOUC0YnQt/3GblAB1ygHHoWQpDuY0Wqc8grUD5oQ=='
+
+service_key = 'oWT9dq/7S6E11bbGOg2qY18HrHxLHQov6dy6WglV6AzFYqnOUC0YnQt/3GblAB1ygHHoWQpDuY0Wqc8grUD5oQ=='
 TOKEN = '6246353591:AAGMZbi9hYtrDumgDzhVeahh51TOOplj9m4'
 MAX_MSG_LENGTH = 300
-baseurl = 'http://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/getPinePollenRiskIdxV3'
+baseurl = 'http://apis.data.go.kr/1360000/HealthWthrIdxServiceV3'
+getPine = '/getPinePollenRiskIdxV3'
+getOak = '/getOakPollenRiskIdxV3'
+getWeed = '/getWeedPollenRiskIdxV3'
 bot = telepot.Bot(TOKEN)
 
-def getData(loc_param, date_param):
-    res_list = []
-    url = baseurl+'&LAWD_CD='+loc_param+'&DEAL_YMD='+date_param
-    #print(url)
-    res_body = urlopen(url).read()
-    #print(res_body)
-    soup = BeautifulSoup(res_body, 'html.parser')
-    items = soup.findAll('item')
-    for item in items:
-        item = re.sub('<.*?>', '|', item.text)
-        parsed = item.split('|')
-        try:
-            row = parsed[3]+'/'+parsed[6]+'/'+parsed[7]+', '+parsed[4]+' '+parsed[5]+', '+parsed[8]+'m², '+parsed[11]+'F, '+parsed[1].strip()+'만원\n'
-        except IndexError:
-            row = item.replace('|', ',')
+def getData(si, do, gun, what):
+    # 지역 데이터
+    workbook = load_workbook('지역별 지점코드(20230330).xlsx', data_only=True)
+    sheet = workbook['최종 업데이트 파일_20230330']
 
-        if row:
-            res_list.append(row.strip())
-    return res_list
+    data = []
 
+    ck = True
+    for row in sheet.iter_rows(values_only=True):
+        if row[2] != None and row[3] != None and row[4] != None:
+            t = row[2] + ' ' + row[3] + ' ' + row[4]
+            data.append(t)
+
+        if ck:  # 맨 처음 데이터 버리기
+            data.clear()
+            ck = False
+
+    workbook.close()
+
+    now = datetime.now()
+    before_12_hour = now - relativedelta(hours=12)
+    string_now = now.strftime('%Y%m%d%H')
+    string_18 = now.strftime('%Y%m%d18')
+    string_06 = now.strftime('%Y%m%d06')
+
+    if string_18 > string_now and string_now > string_06:
+        now = string_now
+    else:
+        now = before_12_hour.strftime('%Y%m%d%H')
+
+    queryParams = {'serviceKey': service_key, 'numOfRows': '3796', 'pageNo': '1', 'areaNo': '', 'time': now}
+
+    dataList = []
+    if what == '소나무':
+        url = baseurl+getPine
+
+        response = requests.get(url, params=queryParams)
+        root = ET.fromstring(response.text)
+
+        temp = []
+        Pine_data = []
+
+        # 읽어올  값
+        for item in root.iter("item"):
+            areaNo = item.findtext("areaNo")  # 지점코드
+            date = item.findtext("date")  # 발표시간
+            today = item.findtext("today")  # 오늘 예측값
+            tomorrow = item.findtext("tomorrow")  # 내일 예측값
+            dayaftertomorrow = item.findtext("dayaftertomorrow")  # 모레 예측값
+
+            temp = [areaNo, date, today, tomorrow, dayaftertomorrow]
+            Pine_data.append(temp)
+
+        for i in range(len(data)):
+            if data[i] == si + ' '  + do + ' ' + gun:
+                dataList.append(Pine_data[i][2]) # 오늘
+                dataList.append(Pine_data[i][3]) # 내일
+                dataList.append(Pine_data[i][4]) # 모레
+
+        return dataList
+
+    elif what == '참나무':
+        url = baseurl + getOak
+
+        response = requests.get(url, params=queryParams)
+        root = ET.fromstring(response.text)
+
+        temp = []
+        Oak_data = []
+
+        # 읽어올  값
+        for item in root.iter("item"):
+            areaNo = item.findtext("areaNo")  # 지점코드
+            date = item.findtext("date")  # 발표시간
+            today = item.findtext("today")  # 오늘 예측값
+            tomorrow = item.findtext("tomorrow")  # 내일 예측값
+            dayaftertomorrow = item.findtext("dayaftertomorrow")  # 모레 예측값
+
+            temp = [areaNo, date, today, tomorrow, dayaftertomorrow]
+            Oak_data.append(temp)
+
+        for i in range(len(data)):
+            if data[i] == si + ' '  + do + ' ' + gun:
+                dataList.append(Oak_data[i][2])  # 오늘
+                dataList.append(Oak_data[i][3])  # 내일
+                dataList.append(Oak_data[i][4])  # 모레
+
+        return dataList
+
+    elif what == '잡초류':
+        url = baseurl + getWeed
+
+        response = requests.get(url, params=queryParams)
+        root = ET.fromstring(response.text)
+
+        temp = []
+        Weed_data = []
+
+        # 읽어올  값
+        for item in root.iter("item"):
+            areaNo = item.findtext("areaNo")  # 지점코드
+            date = item.findtext("date")  # 발표시간
+            today = item.findtext("today")  # 오늘 예측값
+            tomorrow = item.findtext("tomorrow")  # 내일 예측값
+            dayaftertomorrow = item.findtext("dayaftertomorrow")  # 모레 예측값
+
+            temp = [areaNo, date, today, tomorrow, dayaftertomorrow]
+            Weed_data.append(temp)
+
+        for i in range(len(data)):
+            if data[i] == si + ' '  + do + ' ' + gun:
+                dataList.append(Weed_data[i][2])  # 오늘
+                dataList.append(Weed_data[i][3])  # 내일
+                dataList.append(Weed_data[i][4])  # 모레
+
+        return dataList
 def sendMessage(user, msg):
     try:
         bot.sendMessage(user, msg)
     except:
         traceback.print_exc(file=sys.stdout)
-
-def run(date_param, param='11710'):
-    conn = sqlite3.connect('logs.db')
-    cursor = conn.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS logs( user TEXT, log TEXT, PRIMARY KEY(user, log) )')
-    conn.commit()
-
-    user_cursor = sqlite3.connect('users.db').cursor()
-    user_cursor.execute('CREATE TABLE IF NOT EXISTS users( user TEXT, location TEXT, PRIMARY KEY(user, location) )')
-    user_cursor.execute('SELECT * from users')
-
-    for data in user_cursor.fetchall():
-        user, param = data[0], data[1]
-        print(user, date_param, param)
-        res_list = getData( param, date_param )
-        msg = ''
-        for r in res_list:
-            try:
-                cursor.execute('INSERT INTO logs (user,log) VALUES ("%s", "%s")'%(user,r))
-            except sqlite3.IntegrityError:
-                # 이미 해당 데이터가 있다는 것을 의미합니다.
-                pass
-            else:
-                print( str(datetime.now()).split('.')[0], r )
-                if len(r+msg)+1>MAX_MSG_LENGTH:
-                    sendMessage( user, msg )
-                    msg = r+'\n'
-                else:
-                    msg += r+'\n'
-        if msg:
-            sendMessage( user, msg )
-    conn.commit()
-
-if __name__=='__main__':
-    today = date.today()
-    current_month = today.strftime('%Y%m')
-
-    print( '[',today,']received token :', TOKEN )
-
-    pprint( bot.getMe() )
-
-    run(current_month)
