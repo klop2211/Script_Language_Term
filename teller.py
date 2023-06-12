@@ -21,10 +21,10 @@ def replyAptData(user, si, do, gun, what):
     msg = ''
     msg = si + ' ' + do + ' ' + gun + '의 현재' + what + '꽃가루 현황은' + '\n' \
             + '오늘' + search_data[0] + ' 내일' + search_data[1]+ ' 모레' + search_data[2] + '입니다.'
-    if msg:
+    if not search_data:
         noti.sendMessage( user, msg )
     else:
-        noti.sendMessage( user, '%s 기간에 해당하는 데이터가 없습니다.')
+        noti.sendMessage( user, '검색 지역, 검색 종류를 확인해 주세요.')
 
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
